@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ENV_FILE="/etc/coding-swarm/cswarm.env"
+[[ -f "$ENV_FILE" ]] && set -a && source "$ENV_FILE" && set +a
+exec "${VENV_DIR:-/opt/coding-swarm/venv}/bin/python" "${BIN_DIR:-/opt/coding-swarm/bin}/swarm_orchestrator.py" "$@"

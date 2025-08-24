@@ -1,0 +1,78 @@
+services:
+  qwen-api:
+    image: ghcr.io/ggml-org/llama.cpp:server
+    restart: unless-stopped
+    command: >
+      --host 0.0.0.0
+      --port 8080
+      --ctx-size 8192
+      --parallel 2
+      --no-warmup
+      --model /models/qwen2.5-coder-7b-instruct-q4_k_m.gguf
+    volumes:
+      - /opt/models:/models:ro
+    ports:
+      - "8080:8080"
+
+  qwen-web:
+    image: ghcr.io/ggml-org/llama.cpp:server
+    restart: unless-stopped
+    command: >
+      --host 0.0.0.0
+      --port 8081
+      --ctx-size 8192
+      --parallel 2
+      --no-warmup
+      --model /models/qwen2.5-coder-7b-instruct-q4_k_m.gguf
+    volumes:
+      - /opt/models:/models:ro
+    ports:
+      - "8081:8081"
+
+  qwen-mobile:
+    image: ghcr.io/ggml-org/llama.cpp:server
+    restart: unless-stopped
+    command: >
+      --host 0.0.0.0
+      --port 8082
+      --ctx-size 8192
+      --parallel 2
+      --no-warmup
+      --model /models/qwen2.5-coder-7b-instruct-q4_k_m.gguf
+    volumes:
+      - /opt/models:/models:ro
+    ports:
+      - "8082:8082"
+
+  qwen-test:
+    image: ghcr.io/ggml-org/llama.cpp:server
+    restart: unless-stopped
+    command: >
+      --host 0.0.0.0
+      --port 8083
+      --ctx-size 8192
+      --parallel 2
+      --no-warmup
+      --model /models/qwen2.5-coder-7b-instruct-q4_k_m.gguf
+    volumes:
+      - /opt/models:/models:ro
+    ports:
+      - "8083:8083"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "no"]
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: swarm
+      POSTGRES_PASSWORD: swarm
+      POSTGRES_DB: swarm
+    volumes:
+      - coding_swarm_pgdata:/var/lib/postgresql/data
+
+volumes:
+  coding_swarm_pgdata:

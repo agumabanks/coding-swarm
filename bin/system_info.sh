@@ -1,0 +1,10 @@
+#!/bin/bash
+echo "🤖 Coding Swarm System Information"
+echo "=================================="
+echo "Installation Directory: /opt/coding-swarm"
+echo "Configuration: /etc/coding-swarm"
+echo "Services Status:"
+systemctl is-active swarm-api && echo "  ✓ API Service: Running" || echo "  ✗ API Service: Stopped"
+echo "Quick Start:"
+echo "  swarm run \"Add user authentication\" --project /path/to/project"
+echo "  curl http://127.0.0.1:${API_PORT}/health"
