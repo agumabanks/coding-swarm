@@ -12,3 +12,4 @@ Agents (llama.cpp) expected on:
 Place a GGUF at: /opt/models/Qwen2.5-Coder-7B-Instruct-Q4_K_M.gguf
 Official llama.cpp server image: ghcr.io/ggerganov/llama.cpp:server  (HTTP API doc in repo). :contentReference[oaicite:6]{index=6}
 # coding-swarm
+# coding-swarm
