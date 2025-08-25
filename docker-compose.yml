@@ -59,6 +59,7 @@ services:
     ports:
       - "8083:8083"
 
+  # internal only (no host port exposure, avoids 6379 conflicts)
   redis:
     image: redis:7-alpine
     restart: unless-stopped

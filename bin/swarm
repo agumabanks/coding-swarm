@@ -1,5 +1,3 @@
 #!/usr/bin/env bash
-set -euo pipefail
-ENV_FILE="/etc/coding-swarm/cswarm.env"
-[[ -f "$ENV_FILE" ]] && set -a && source "$ENV_FILE" && set +a
-exec "${VENV_DIR:-/opt/coding-swarm/venv}/bin/python" "${BIN_DIR:-/opt/coding-swarm/bin}/swarm_orchestrator.py" "$@"
+echo -e "\033[33m[notice]\033[0m 'swarm' has been renamed to 'sanaa'. Forwarding..."
+exec /usr/local/bin/sanaa "$@"
