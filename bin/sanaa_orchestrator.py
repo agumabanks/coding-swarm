@@ -21,37 +21,33 @@ from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 from rich.markdown import Markdown
-import httpx
 from dataclasses import dataclass
+
+from api.providers import BaseProvider, get_provider
 
 console = Console()
 app = typer.Typer(add_completion=False)
 
-OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "http://127.0.0.1:8080/v1")
-OPENAI_API_KEY  = os.getenv("OPENAI_API_KEY", "sk-local")
-OPENAI_MODEL    = os.getenv("OPENAI_MODEL", "qwen2.5-coder-7b-instruct-q4_k_m.gguf")
+provider: BaseProvider
 
 IGNORE_DIRS = {".git","node_modules",".venv","__pycache__","dist","build",".next",".svelte-kit",".turbo"}
 TEXT_EXT = {".txt",".md",".py",".ts",".tsx",".js",".jsx",".json",".yaml",".yml",".toml",".html",".css",".scss",".rs",".go",".java",".kt",".swift",".php",".rb",".c",".h",".cpp",".cc",".cs",".sql",".env",".sh"}
 
-def _client():
-    headers={"Authorization": f"Bearer {OPENAI_API_KEY}","Content-Type":"application/json"}
-    # Some servers want /v1 prefix present in base URL, some want path in request — we handle both.
-    base = OPENAI_BASE_URL.rstrip("/")
-    path = "/chat/completions" if base.endswith("/v1") else "/v1/chat/completions"
-    return base, path, headers
+
+@app.callback()
+def _main(
+    provider_name: str = typer.Option(
+        os.getenv("CSWARM_PROVIDER", "openai-compatible"),
+        "--provider",
+        help="LLM provider to use",
+    ),
+) -> None:
+    """Initialize global provider from CLI or env."""
+    global provider
+    provider = get_provider(provider_name)
 
 def chat_once(messages: list[dict], temperature: float=0.2, max_tokens: int=2048) -> str:
-    base, path, headers = _client()
-    payload={"model": OPENAI_MODEL, "messages": messages, "temperature": temperature, "max_tokens": max_tokens}
-    with httpx.Client(timeout=120.0) as c:
-        r=c.post(base+path, json=payload, headers=headers)
-        r.raise_for_status()
-        data=r.json()
-        try:
-            return data["choices"][0]["message"]["content"]
-        except Exception:
-            return json.dumps(data, indent=2)
+    return provider.chat(messages, temperature=temperature, max_tokens=max_tokens)
 
 def sha1(s:str)->str: return hashlib.sha1(s.encode()).hexdigest()[:8]
 
