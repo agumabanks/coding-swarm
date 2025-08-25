@@ -7,10 +7,7 @@ import subprocess
 from pathlib import Path
 from typing import Iterable, List
 
-try:
-    import openai
-except Exception:  # pragma: no cover - openai is optional
-    openai = None  # type: ignore
+from api.providers import OpenAICompatibleProvider, get_provider
 
 __all__ = ["get_changed_files", "write_tests", "main"]
 
@@ -57,28 +54,18 @@ def get_changed_files(base: str) -> List[Path]:
     return unique_files
 
 
-def _ensure_openai() -> None:
-    if openai is None:
-        raise SystemExit("openai package is not installed")
-    if not os.getenv("OPENAI_API_KEY"):
-        raise SystemExit("OPENAI_API_KEY environment variable is not set")
-
-
 def generate_test_content(path: Path, model: str) -> str:
-    """Use the OpenAI API to generate tests for ``path``."""
-    _ensure_openai()
+    """Use the configured LLM provider to generate tests for ``path``."""
+    provider = get_provider()
+    if isinstance(provider, OpenAICompatibleProvider):  # allow overriding model
+        provider.model = model
     content = path.read_text()
     prompt = (
         "You are a coding assistant tasked with writing pytest-style unit tests."
         f"\nGiven the following file located at {path}, write minimal tests that exercise"
         "\nits main behaviour. Ensure the tests are valid Python code.\n\n" + content
     )
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.0,
-    )
-    return response["choices"][0]["message"]["content"]
+    return provider.chat([{"role": "user", "content": prompt}], temperature=0.0)
 
 
 def write_tests(files: Iterable[Path], output_dir: Path, model: str) -> List[Path]:
