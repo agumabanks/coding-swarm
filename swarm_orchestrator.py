@@ -6,10 +6,11 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 import typer, yaml, requests
 from analysis import indexer, query
+ 
 
-app = typer.Typer(add_completion=False)
+from orchestrator.orchestrator import app
 
-def env(k, d=""):
+ def env(k, d=""):
     return os.getenv(k, d)
 
 def run(cmd, cwd=None, timeout=600) -> tuple[int,str,str]:
@@ -207,3 +208,6 @@ def orchestrate(goal: str = typer.Option(..., "--goal", "-g"),
             typer.echo("No fix patch found; continuing.")
 
     typer.echo("Done.")
+ if __name__ == "__main__":
+    app()
+ 
