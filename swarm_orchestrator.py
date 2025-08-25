@@ -5,6 +5,10 @@ from dataclasses import dataclass
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 import typer, yaml, requests
+from plugins import load_plugins, REGISTRY
+
+# Load any third-party plugins on startup.
+load_plugins()
 
 app = typer.Typer(add_completion=False)
 
@@ -94,6 +98,11 @@ def orchestrate(goal: str = typer.Option(..., "--goal", "-g"),
 
     call, ident = decide_provider(provider)
     typer.echo(f"[orchestrator] provider={ident}, max_iters={max_iters}")
+    if REGISTRY["plugins"]:
+        typer.echo(
+            "[orchestrator] plugins="
+            + ", ".join(sorted(REGISTRY["plugins"].keys()))
+        )
 
     system_preface = doc_lookup(doc_hints) + (f"Goal: {goal}\n")
     add_memory(project, "system", f"Start goal: {goal}")
