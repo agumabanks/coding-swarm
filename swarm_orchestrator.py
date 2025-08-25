@@ -5,8 +5,15 @@ from dataclasses import dataclass
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 import typer, yaml, requests
-from analysis import indexer, query
+# <<<<<<< codex/define-and-document-plugins-architecture
+# from plugins import load_plugins, REGISTRY
+
+# # Load any third-party plugins on startup.
+# load_plugins()
+# =======
+# from analysis import indexer, query
  
+# >>>>>>> main
 
 from orchestrator.orchestrator import app
 
@@ -96,6 +103,11 @@ def orchestrate(goal: str = typer.Option(..., "--goal", "-g"),
 
     call, ident = decide_provider(provider)
     typer.echo(f"[orchestrator] provider={ident}, max_iters={max_iters}")
+    if REGISTRY["plugins"]:
+        typer.echo(
+            "[orchestrator] plugins="
+            + ", ".join(sorted(REGISTRY["plugins"].keys()))
+        )
 
     # Build initial search index for the project
     indexer.build_index(project)
