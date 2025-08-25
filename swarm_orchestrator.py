@@ -5,10 +5,12 @@ from dataclasses import dataclass
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 import typer, yaml, requests
+from analysis import indexer, query
+ 
 
-app = typer.Typer(add_completion=False)
+from orchestrator.orchestrator import app
 
-def env(k, d=""):
+ def env(k, d=""):
     return os.getenv(k, d)
 
 def run(cmd, cwd=None, timeout=600) -> tuple[int,str,str]:
@@ -95,11 +97,24 @@ def orchestrate(goal: str = typer.Option(..., "--goal", "-g"),
     call, ident = decide_provider(provider)
     typer.echo(f"[orchestrator] provider={ident}, max_iters={max_iters}")
 
-    system_preface = doc_lookup(doc_hints) + (f"Goal: {goal}\n")
+    # Build initial search index for the project
+    indexer.build_index(project)
+
     add_memory(project, "system", f"Start goal: {goal}")
 
     for it in range(1, max_iters+1):
         typer.echo(f"\n== Iteration {it}/{max_iters} ==")
+
+        # refresh context each iteration
+        indexer.build_index(project)
+        pindex = query.ProjectIndex(project)
+        ctx = pindex.by_text(goal)
+        ctx_txt = "".join(
+            f"{c['path']}:\n{c['snippet']}\n\n" for c in ctx
+        )
+        system_preface = doc_lookup(doc_hints) + (f"Goal: {goal}\n")
+        if ctx_txt:
+            system_preface += "Relevant project context:\n" + ctx_txt
 
         # 1) Architect
         architect = personas.get("architect","Design the steps, files to change, and tests to run.")
@@ -193,3 +208,6 @@ def orchestrate(goal: str = typer.Option(..., "--goal", "-g"),
             typer.echo("No fix patch found; continuing.")
 
     typer.echo("Done.")
+ if __name__ == "__main__":
+    app()
+ 
