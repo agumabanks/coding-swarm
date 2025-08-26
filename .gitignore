@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.mypy_cache/
+.pytest_cache/
+.coverage
+.hypothesis/
+.cache/
+
+# Envs & secrets
+.env
+.env.*
+venv/
+.venv/
+
+# Editors
+.idea/
+.vscode/
+*.swp
+
+# Data / runtime
+pgdata/
+models/
