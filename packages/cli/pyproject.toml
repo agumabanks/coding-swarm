@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "coding-swarm-cli"
+version = "0.1.0"
+description = "CLI for Coding Swarm"
+requires-python = ">=3.11"
+dependencies = [
+  "coding-swarm-core>=0.1.0",
+  "coding-swarm-agents>=0.1.0",
+  "coding-swarm-orchestrator>=0.1.0",
+  "coding-swarm-api>=0.1.0",
+  "typer[all]>=0.12.0",
+  "rich>=13.0.0",
+]
+
+[project.scripts]
+swarmx = "coding_swarm_cli.interactive:app"
+swarm-orchestrator = "coding_swarm_orchestrator.orchestrator:main"
+swarm-agent = "coding_swarm_agents.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/coding_swarm_cli"]

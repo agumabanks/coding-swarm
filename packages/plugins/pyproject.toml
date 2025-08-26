@@ -1,0 +1,18 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "coding-swarm-plugins"
+version = "0.1.0"
+description = "Plugin system for Coding Swarm"
+requires-python = ">=3.11"
+dependencies = ["coding-swarm-core>=0.1.0"]
+
+[project.entry-points."coding_swarm.plugins"]
+code_quality = "coding_swarm_plugins.marketplace.code_quality:register"
+test_generator = "coding_swarm_plugins.marketplace.test_generator:register"
+security_scanner = "coding_swarm_plugins.marketplace.security_scanner:register"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/coding_swarm_plugins"]

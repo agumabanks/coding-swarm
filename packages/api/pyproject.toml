@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "coding-swarm-api"
+version = "0.1.0"
+description = "FastAPI server for Coding Swarm"
+requires-python = ">=3.11"
+dependencies = [
+  "coding-swarm-core>=0.1.0",
+  "coding-swarm-orchestrator>=0.1.0",
+  "fastapi>=0.104.0",
+  "uvicorn[standard]>=0.24.0",
+  "pydantic>=2.0.0",
+  "httpx>=0.27.0",
+  "websockets>=11.0.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/coding_swarm_api"]

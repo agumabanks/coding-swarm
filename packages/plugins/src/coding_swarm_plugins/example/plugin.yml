@@ -1,0 +1,12 @@
+name: example
+version: 0.1.0
+description: Example plugin with a greeting agent.
+entry_point: example.plugin:register
+capabilities:
+  - greet
+config_schema:
+  type: object
+  properties:
+    name:
+      type: string
+      description: Name to greet
