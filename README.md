@@ -1,4 +1,45 @@
-# Coding Swarm
+# Sanaa — Coding Swarm CLI
+
+Sanaa is an all-in-one, open-source AI coding assistant that runs locally against your models.
+It combines multiple “modes”:
+
+- **Architect** – designs solutions before you write code
+- **Code** – turns plans into production-ready code
+- **Debug** – finds and fixes issues
+- **Orchestrator** – breaks complex goals into delegated subtasks
+
+Sanaa aims to be batteries-included and easy to use (inspired by Kilo Code’s “brings together the best features of AI coding tools, and still easy to use” ethos). :contentReference[oaicite:2]{index=2}
+
+---
+
+## Prerequisites
+
+- **Python 3.11+** with `venv`
+- **Local model server (OpenAI-compatible)**  
+  This repo defaults to your running `llama.cpp` servers. The `llama-cpp-python`/`llama.cpp` web server exposes an OpenAI-compatible `/v1` API you can call with standard Chat Completions. :contentReference[oaicite:3]{index=3}
+
+Your current containers (from `docker ps`) look like:
+
+- `coding-swarm-qwen-api-1` on **:8080** (healthy) – default base
+- `coding-swarm-qwen-web-1` on :8081
+- `coding-swarm-qwen-mobile-1` on :8082
+- `coding-swarm-qwen-test-1` on :8083
+- `redis:7-alpine` and `postgres:16-alpine` (optional for advanced features)
+
+---
+
+## Quick start
+
+```bash
+# 1) create/refresh venv, install editable packages
+python3 tools/bootstrap.py
+source .venv/bin/activate
+
+# 2) run the CLI (interactive)
+sanaa
+# or, if PATH doesn't have it:
+.venv/bin/swarm-orchestrator
+
 
 - API: http://127.0.0.1:9101
 - Public (via Nginx): http://45.94.58.252/info
