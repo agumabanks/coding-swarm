@@ -4,11 +4,20 @@ Sanaa - Premium AI Development Assistant
 Main entry point that launches Sanaa Projects interface
 """
 import sys
+import os
 from pathlib import Path
 
 # Add the project root to Python path
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
+
+# Check if we're in a virtual environment, if not, use the sanaa_env
+if not hasattr(sys, 'real_prefix') and not (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
+    # Not in a virtual environment, try to use sanaa_env
+    venv_python = BASE_DIR / "sanaa_env" / "bin" / "python3"
+    if venv_python.exists():
+        # Re-execute with virtual environment Python
+        os.execv(str(venv_python), [str(venv_python)] + sys.argv)
 
 # Import and run the main CLI
 from packages.core.src.coding_swarm_core.projects import cli_main

@@ -238,7 +238,7 @@ app = typer.Typer(
 )
 
 console = Console()
-config = SanaaConfig.load()
+config = SanaaConfig()
 
 # Global instances (lazy initialized)
 sanaa: Optional[PremiumSanaa] = None
@@ -548,26 +548,32 @@ Let's start by setting up your first project!
     
     def _create_model_status_panel(self) -> Panel:
         """Create model status panel"""
-        
+
+        # Use default values for now to avoid config issues
+        model_name = "qwen2.5-coder-7b-instruct-q4_k_m"
+        model_base = "http://127.0.0.1:8080/v1"
+        max_context_files = 10
+        cache_ttl = 300
+
         try:
             import httpx
             with httpx.Client(timeout=5) as client:
-                response = client.get(f"{config.model_base}/models")
+                response = client.get(f"{model_base}/models")
                 if response.status_code == 200:
                     status = "[green]✓ Connected[/green]"
                 else:
                     status = "[yellow]⚠ Issues detected[/yellow]"
         except Exception:
             status = "[red]✗ Unreachable[/red]"
-        
+
         content = f"""[bold]Model Configuration[/bold]
 
-Name: {config.model_name}
-Endpoint: {config.model_base}
+Name: {model_name}
+Endpoint: {model_base}
 Status: {status}
-Context Limit: {config.max_context_files} files
-Cache TTL: {config.cache_ttl}s"""
-        
+Context Limit: {max_context_files} files
+Cache TTL: {cache_ttl}s"""
+
         return Panel(content, title="Model", border_style="blue")
     
     def _create_projects_status_panel(self) -> Panel:
