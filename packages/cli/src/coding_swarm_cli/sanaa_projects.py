@@ -736,8 +736,18 @@ class SanaaProjectsInterface:
                 except (ValueError, IndexError):
                     self.console.print("[red]Invalid choice. Please select a valid template.[/red]")
 
-        # Create project
-        template_name = f"{selected_framework}-{template_choice.lower().replace(' ', '-').replace('.', '').replace('/', '-')}"
+        # Create project - map template names to correct template keys
+        template_name_map = {
+            "Laravel API": "laravel-api",
+            "Laravel Full-Stack": "laravel-fullstack",
+            "React Basic": "react-basic",
+            "Next.js Full-Stack": "react-nextjs",
+            "Flutter Basic": "flutter-basic",
+            "Flutter with Firebase": "flutter-firebase"
+        }
+
+        template_name = template_name_map.get(template_choice, f"{selected_framework}-{template_choice.lower().replace(' ', '-').replace('.', '').replace('/', '-')}")
+
         try:
             sanaa_project = self.manager.create_project(name, template_name, path)
             self.current_project = sanaa_project

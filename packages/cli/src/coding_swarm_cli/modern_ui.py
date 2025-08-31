@@ -337,7 +337,7 @@ class ModernCLI:
         project_name = Prompt.ask("Project name")
         project_path = Prompt.ask("Project path", default=f"./{project_name}")
 
-        # Find the template key
+        # Find the template key by matching name and framework
         template_key = None
         for key, template in template_manager.templates.items():
             if template.name == template_name and template.framework == framework:
@@ -345,7 +345,13 @@ class ModernCLI:
                 break
 
         if not template_key:
-            raise ValueError(f"Template '{template_name}' not found for framework '{framework}'")
+            # Debug: show available templates for this framework
+            available_templates = []
+            for key, template in template_manager.templates.items():
+                if template.framework == framework:
+                    available_templates.append(f"'{template.name}' (key: {key})")
+            available_str = ", ".join(available_templates) if available_templates else "none"
+            raise ValueError(f"Template '{template_name}' not found for framework '{framework}'. Available templates: {available_str}")
 
         # Create project
         with self.console.status(f"[bold green]Creating {project_name}...[/bold green]"):

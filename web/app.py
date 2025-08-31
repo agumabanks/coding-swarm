@@ -88,9 +88,14 @@ class SanaaWebApp:
             # Calculate response time
             process_time = asyncio.get_event_loop().time() - start_time
 
-            # Log request
+            # Log request with host header for debugging
+            host_header = request.headers.get("host", "unknown")
             print(f"[{datetime.utcnow()}] {request.method} {request.url.path} "
-                  f"- {response.status_code} - {process_time:.3f}s - {client_ip}")
+                  f"- Host: {host_header} - {response.status_code} - {process_time:.3f}s - {client_ip}")
+
+            # Special logging for ai.sanaa.co domain
+            if "ai.sanaa.co" in host_header:
+                print(f"[DEBUG] Request to ai.sanaa.co: {request.method} {request.url} from {client_ip}")
 
             # Record metrics
             self.monitor.record_api_request(
