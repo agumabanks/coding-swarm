@@ -1,0 +1,636 @@
+{% extends "base.html" %}
+
+{% block title %}Sanaa Dashboard{% endblock %}
+
+{% block sidebar %}
+<div class="sidebar-header">
+    <div class="title">DASHBOARD</div>
+</div>
+<div class="sidebar-content">
+    <div style="padding: 10px;">
+        <h4 style="color: #cccccc; margin-bottom: 10px;">Quick Actions</h4>
+        <button class="action-btn" onclick="createNewProject()">
+            <i class="fas fa-plus"></i> New Project
+        </button>
+        <button class="action-btn" onclick="openTerminal()">
+            <i class="fas fa-terminal"></i> Open Terminal
+        </button>
+        <button class="action-btn" onclick="showSettings()">
+            <i class="fas fa-cog"></i> Settings
+        </button>
+
+        <h4 style="color: #cccccc; margin: 20px 0 10px 0;">Recent Projects</h4>
+        <div id="recent-projects">
+            <!-- Recent projects will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<style>
+    .action-btn {
+        width: 100%;
+        padding: 8px 12px;
+        margin-bottom: 5px;
+        background-color: #007acc;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-align: left;
+        font-size: 13px;
+    }
+
+    .action-btn:hover {
+        background-color: #005999;
+    }
+
+    .action-btn i {
+        margin-right: 8px;
+    }
+
+    .metric-card {
+        background-color: #252526;
+        border: 1px solid #3e3e42;
+        border-radius: 6px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+
+    .metric-title {
+        color: #cccccc;
+        font-size: 14px;
+        margin-bottom: 5px;
+    }
+
+    .metric-value {
+        color: #ffffff;
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .metric-change {
+        font-size: 12px;
+        padding: 2px 6px;
+        border-radius: 3px;
+    }
+
+    .metric-change.positive {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .metric-change.negative {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .chart-container {
+        height: 200px;
+        background-color: #1e1e1e;
+        border-radius: 4px;
+        margin: 10px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #cccccc;
+    }
+
+    .activity-item {
+        display: flex;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #3e3e42;
+    }
+
+    .activity-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+        font-size: 12px;
+    }
+
+    .activity-content {
+        flex: 1;
+    }
+
+    .activity-title {
+        color: #cccccc;
+        font-size: 13px;
+        margin-bottom: 2px;
+    }
+
+    .activity-time {
+        color: #858585;
+        font-size: 11px;
+    }
+
+    .project-card {
+        background-color: #252526;
+        border: 1px solid #3e3e42;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 8px;
+        cursor: pointer;
+    }
+
+    .project-card:hover {
+        border-color: #007acc;
+    }
+
+    .project-name {
+        color: #ffffff;
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .project-meta {
+        color: #858585;
+        font-size: 12px;
+    }
+
+    .agent-status {
+        display: flex;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #3e3e42;
+    }
+
+    .agent-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background-color: #007acc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        margin-right: 10px;
+    }
+
+    .agent-info {
+        flex: 1;
+    }
+
+    .agent-name {
+        color: #cccccc;
+        font-size: 13px;
+        margin-bottom: 2px;
+    }
+
+    .agent-status-text {
+        color: #858585;
+        font-size: 11px;
+    }
+
+    .status-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-left: 8px;
+    }
+
+    .status-indicator.active {
+        background-color: #28a745;
+    }
+
+    .status-indicator.idle {
+        background-color: #ffc107;
+    }
+
+    .status-indicator.offline {
+        background-color: #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block editor %}
+<div style="padding: 20px; overflow-y: auto;">
+    <!-- System Overview -->
+    <div style="margin-bottom: 30px;">
+        <h2 style="color: #ffffff; margin-bottom: 20px;">System Overview</h2>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+            <div class="metric-card">
+                <div class="metric-title">Active Projects</div>
+                <div class="metric-value" id="active-projects">5</div>
+                <div class="metric-change positive">+2 this week</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-title">Running Agents</div>
+                <div class="metric-value" id="running-agents">3</div>
+                <div class="metric-change positive">+1 today</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-title">System Health</div>
+                <div class="metric-value" id="system-health">98%</div>
+                <div class="metric-change positive">Stable</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-title">Response Time</div>
+                <div class="metric-value" id="response-time">234ms</div>
+                <div class="metric-change negative">+12ms</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div style="margin-bottom: 30px;">
+        <h2 style="color: #ffffff; margin-bottom: 20px;">Performance Metrics</h2>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 15px;">
+            <div class="metric-card">
+                <div class="metric-title">CPU Usage Over Time</div>
+                <div class="chart-container">
+                    <i class="fas fa-chart-line" style="font-size: 48px; opacity: 0.5;"></i>
+                    <span style="margin-left: 10px;">CPU Usage Chart</span>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-title">Memory Usage Trend</div>
+                <div class="chart-container">
+                    <i class="fas fa-chart-area" style="font-size: 48px; opacity: 0.5;"></i>
+                    <span style="margin-left: 10px;">Memory Usage Chart</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div style="margin-bottom: 30px;">
+        <h2 style="color: #ffffff; margin-bottom: 20px;">Recent Activity</h2>
+
+        <div class="metric-card">
+            <div id="recent-activity">
+                <div class="activity-item">
+                    <div class="activity-icon" style="background-color: #28a745;">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-title">Project 'web-app' deployment completed</div>
+                        <div class="activity-time">2 minutes ago</div>
+                    </div>
+                </div>
+
+                <div class="activity-item">
+                    <div class="activity-icon" style="background-color: #007acc;">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-title">Agent 'Coder' completed task</div>
+                        <div class="activity-time">5 minutes ago</div>
+                    </div>
+                </div>
+
+                <div class="activity-item">
+                    <div class="activity-icon" style="background-color: #ffc107;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-title">High memory usage detected</div>
+                        <div class="activity-time">10 minutes ago</div>
+                    </div>
+                </div>
+
+                <div class="activity-item">
+                    <div class="activity-icon" style="background-color: #dc3545;">
+                        <i class="fas fa-times"></i>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-title">Test failure in 'api-service'</div>
+                        <div class="activity-time">15 minutes ago</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agent Status -->
+    <div style="margin-bottom: 30px;">
+        <h2 style="color: #ffffff; margin-bottom: 20px;">Agent Status</h2>
+
+        <div class="metric-card">
+            <div id="agent-status">
+                <!-- Agent status will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block panel %}
+<div id="terminal-panel" class="panel-content-item active">
+    <div class="terminal" id="terminal-output">
+        Welcome to Sanaa Dashboard Terminal<br>
+        Monitor system status and execute commands.<br>
+        <br>
+        sanaa>
+    </div>
+    <div style="display: flex; padding: 10px; border-top: 1px solid #3e3e42;">
+        <input type="text" class="command-input" id="command-input"
+               placeholder="Enter command..." onkeypress="handleCommandKeyPress(event)">
+        <button onclick="executeCommand()" style="margin-left: 10px; padding: 5px 10px; background: #007acc; color: white; border: none; border-radius: 3px;">
+            <i class="fas fa-play"></i>
+        </button>
+    </div>
+</div>
+
+<div id="chat-panel" class="panel-content-item">
+    <div class="chat-interface">
+        <div class="chat-messages" id="chat-messages">
+            <div class="chat-message assistant">
+                <strong>Sanaa:</strong> Welcome to your dashboard! I can help you monitor your projects and agents.
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" class="chat-input" id="chat-input"
+                   placeholder="Ask about system status..."
+                   onkeypress="handleChatKeyPress(event)">
+            <button class="chat-send-btn" onclick="sendChatMessage()">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="output-panel" class="panel-content-item">
+    <div id="output-content">
+        <h3 style="color: #cccccc; margin-bottom: 10px;">System Logs</h3>
+        <div id="system-logs">
+            <!-- System logs will appear here -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block monaco_init %}
+// Dashboard doesn't need Monaco editor
+{% endblock %}
+
+{% block init_script %}
+// Initialize dashboard
+initializeDashboard();
+{% endblock %}
+
+{% block scripts %}
+// Dashboard-specific JavaScript
+let dashboardData = {};
+
+async function initializeDashboard() {
+    // Load dashboard data
+    await loadDashboardData();
+
+    // Set up real-time updates
+    setInterval(updateDashboardMetrics, 5000); // Update every 5 seconds
+
+    // Initialize terminal and chat (reuse from editor)
+    initializeTerminal();
+    initializeChat();
+}
+
+async function loadDashboardData() {
+    try {
+        // Load system status
+        const statusResponse = await fetch('/api/system/status');
+        const statusData = await statusResponse.json();
+
+        updateSystemMetrics(statusData);
+
+        // Load projects
+        const projectsResponse = await fetch('/api/projects');
+        const projectsData = await projectsResponse.json();
+
+        updateProjectsList(projectsData.projects);
+
+        // Load agents
+        const agentsResponse = await fetch('/api/agents');
+        const agentsData = await agentsResponse.json();
+
+        updateAgentsList(agentsData.agents);
+
+    } catch (error) {
+        console.error('Error loading dashboard data:', error);
+    }
+}
+
+function updateSystemMetrics(data) {
+    document.getElementById('active-projects').textContent = '5'; // Mock data
+    document.getElementById('running-agents').textContent = data.active_connections || '3';
+    document.getElementById('system-health').textContent = '98%'; // Mock data
+    document.getElementById('response-time').textContent = '234ms'; // Mock data
+}
+
+function updateProjectsList(projects) {
+    const container = document.getElementById('recent-projects');
+    container.innerHTML = '';
+
+    projects.forEach(project => {
+        const projectCard = document.createElement('div');
+        projectCard.className = 'project-card';
+        projectCard.onclick = () => openProject(project.id);
+
+        projectCard.innerHTML = `
+            <div class="project-name">${project.name}</div>
+            <div class="project-meta">
+                <span>${project.framework}</span> •
+                <span>${project.last_modified}</span>
+            </div>
+        `;
+
+        container.appendChild(projectCard);
+    });
+}
+
+function updateAgentsList(agents) {
+    const container = document.getElementById('agent-status');
+    container.innerHTML = '';
+
+    agents.forEach(agent => {
+        const agentDiv = document.createElement('div');
+        agentDiv.className = 'agent-status';
+
+        const statusClass = agent.status === 'active' ? 'active' :
+                           agent.status === 'idle' ? 'idle' : 'offline';
+
+        agentDiv.innerHTML = `
+            <div class="agent-avatar">${agent.name.charAt(0)}</div>
+            <div class="agent-info">
+                <div class="agent-name">${agent.name}</div>
+                <div class="agent-status-text">${agent.status} • ${agent.tasks_completed} tasks</div>
+            </div>
+            <div class="status-indicator ${statusClass}"></div>
+        `;
+
+        container.appendChild(agentDiv);
+    });
+}
+
+function updateDashboardMetrics() {
+    // Update metrics periodically
+    loadDashboardData();
+}
+
+function createNewProject() {
+    // Navigate to project creation
+    window.location.href = '/projects';
+}
+
+function openTerminal() {
+    // Switch to terminal panel
+    showPanelContent('terminal');
+    document.getElementById('command-input').focus();
+}
+
+function showSettings() {
+    // Navigate to settings
+    alert('Settings panel coming soon!');
+}
+
+function openProject(projectId) {
+    // Navigate to project editor
+    window.location.href = `/editor?project=${projectId}`;
+}
+
+// Reuse terminal and chat functions from editor
+function initializeTerminal() {
+    const terminal = document.getElementById('terminal-output');
+    const input = document.getElementById('command-input');
+
+    // Focus input on terminal click
+    terminal.addEventListener('click', () => input.focus());
+}
+
+function handleCommandKeyPress(event) {
+    if (event.key === 'Enter') {
+        executeCommand();
+    }
+}
+
+function executeCommand() {
+    const input = document.getElementById('command-input');
+    const command = input.value.trim();
+
+    if (!command) return;
+
+    // Display command
+    appendToTerminal(`sanaa> ${command}`);
+
+    // Execute command
+    executeCommandAsync(command);
+
+    // Clear input
+    input.value = '';
+}
+
+async function executeCommandAsync(command) {
+    try {
+        const response = await fetch('/api/command', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                command: command,
+                args: []
+            })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            appendToTerminal(result.result.output || 'Command executed successfully');
+        } else {
+            appendToTerminal(`Error: ${result.error}`);
+        }
+    } catch (error) {
+        appendToTerminal(`Error: ${error.message}`);
+    }
+
+    // Add new prompt
+    appendToTerminal('\nsanaa> ');
+}
+
+function appendToTerminal(text) {
+    const terminal = document.getElementById('terminal-output');
+    terminal.textContent += text + '\n';
+    terminal.scrollTop = terminal.scrollHeight;
+}
+
+function initializeChat() {
+    // Chat initialization
+}
+
+function handleChatKeyPress(event) {
+    if (event.key === 'Enter') {
+        sendChatMessage();
+    }
+}
+
+function sendChatMessage() {
+    const input = document.getElementById('chat-input');
+    const message = input.value.trim();
+
+    if (!message) return;
+
+    // Add user message
+    addChatMessage(message, 'user');
+
+    // Clear input
+    input.value = '';
+
+    // Simulate AI response
+    setTimeout(() => {
+        const responses = [
+            "Your system is running smoothly! All agents are active.",
+            "I notice your CPU usage is a bit high. Would you like me to investigate?",
+            "Great! Your latest deployment was successful. All tests are passing.",
+            "I can help you optimize your memory usage. Would you like recommendations?"
+        ];
+
+        const response = responses[Math.floor(Math.random() * responses.length)];
+        addChatMessage(response, 'assistant');
+    }, 1000 + Math.random() * 2000);
+}
+
+function addChatMessage(message, type) {
+    const messages = document.getElementById('chat-messages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${type}`;
+
+    if (type === 'user') {
+        messageDiv.innerHTML = `<strong>You:</strong> ${message}`;
+    } else {
+        messageDiv.innerHTML = `<strong>Sanaa:</strong> ${message}`;
+    }
+
+    messages.appendChild(messageDiv);
+    messages.scrollTop = messages.scrollHeight;
+}
+
+function showPanelContent(panelType) {
+    const panelContents = document.querySelectorAll('.panel-content-item');
+    panelContents.forEach(content => {
+        content.classList.remove('active');
+    });
+
+    const targetContent = document.getElementById(`${panelType}-panel`);
+    if (targetContent) {
+        targetContent.classList.add('active');
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    showPanelContent('terminal');
+});
+{% endblock %}

@@ -1,0 +1,550 @@
+{% extends "base.html" %}
+
+{% block title %}Sanaa Code Editor{% endblock %}
+
+{% block sidebar %}
+<div class="sidebar-header">
+    <div class="title">EXPLORER</div>
+    <button class="sidebar-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+</div>
+<div class="sidebar-content">
+    <ul class="file-tree" id="file-tree">
+        <!-- Files will be loaded dynamically -->
+    </ul>
+</div>
+{% endblock %}
+
+{% block editor %}
+<div id="editor-container" class="editor">
+    <!-- Monaco Editor will be initialized here -->
+</div>
+{% endblock %}
+
+{% block panel %}
+<div id="terminal-panel" class="panel-content-item active">
+    <div class="terminal" id="terminal-output">
+        Welcome to Sanaa Web IDE Terminal<br>
+        Type 'help' for available commands.<br>
+        <br>
+        sanaa>
+    </div>
+    <div style="display: flex; padding: 10px; border-top: 1px solid #3e3e42;">
+        <input type="text" class="command-input" id="command-input"
+               placeholder="Enter command..." onkeypress="handleCommandKeyPress(event)">
+        <button onclick="executeCommand()" style="margin-left: 10px; padding: 5px 10px; background: #007acc; color: white; border: none; border-radius: 3px;">
+            <i class="fas fa-play"></i>
+        </button>
+    </div>
+</div>
+
+<div id="chat-panel" class="panel-content-item">
+    <div class="chat-interface">
+        <div class="chat-messages" id="chat-messages">
+            <div class="chat-message assistant">
+                <strong>Sanaa:</strong> Hello! I'm your AI coding assistant. How can I help you today?
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" class="chat-input" id="chat-input"
+                   placeholder="Ask me anything about your code..."
+                   onkeypress="handleChatKeyPress(event)">
+            <button class="chat-send-btn" onclick="sendChatMessage()">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="output-panel" class="panel-content-item">
+    <div id="output-content">
+        <!-- Build output, test results, etc. will appear here -->
+    </div>
+</div>
+{% endblock %}
+
+{% block monaco_init %}
+// Initialize Monaco Editor
+window.editor = monaco.editor.create(document.getElementById('editor-container'), {
+    value: '// Welcome to Sanaa Web IDE\n// Start coding here...\n\nconsole.log("Hello, Sanaa!");',
+    language: 'javascript',
+    theme: 'vs-dark',
+    fontSize: 14,
+    minimap: { enabled: true },
+    scrollBeyondLastLine: false,
+    automaticLayout: true,
+    wordWrap: 'on',
+    tabSize: 2,
+    insertSpaces: true,
+    detectIndentation: false
+});
+
+// Editor event listeners
+window.editor.onDidChangeCursorPosition(function(e) {
+    updateCursorPosition(e.position);
+});
+
+window.editor.onDidChangeModelContent(function(e) {
+    handleContentChange(e);
+});
+
+// File tree
+loadFileTree();
+{% endblock %}
+
+{% block init_script %}
+// Initialize the editor interface
+initializeEditor();
+{% endblock %}
+
+{% block scripts %}
+// Global variables for this page
+let currentFile = null;
+let fileTree = {};
+let commandHistory = [];
+let commandHistoryIndex = -1;
+
+// Initialize editor interface
+function initializeEditor() {
+    // Load initial file tree
+    loadFileTree();
+
+    // Set up keyboard shortcuts
+    document.addEventListener('keydown', handleKeyboardShortcut);
+
+    // Initialize terminal
+    initializeTerminal();
+
+    // Initialize chat
+    initializeChat();
+}
+
+// File tree management
+async function loadFileTree() {
+    try {
+        // This would load the actual project structure
+        // For now, we'll create a mock structure
+        const mockFiles = [
+            { name: 'src', type: 'folder', children: [
+                { name: 'main.py', type: 'file' },
+                { name: 'utils.py', type: 'file' }
+            ]},
+            { name: 'tests', type: 'folder', children: [
+                { name: 'test_main.py', type: 'file' }
+            ]},
+            { name: 'README.md', type: 'file' },
+            { name: 'requirements.txt', type: 'file' }
+        ];
+
+        renderFileTree(mockFiles, document.getElementById('file-tree'));
+    } catch (error) {
+        console.error('Error loading file tree:', error);
+    }
+}
+
+function renderFileTree(files, container, path = '') {
+    container.innerHTML = '';
+
+    files.forEach(file => {
+        const li = document.createElement('li');
+        const fullPath = path ? `${path}/${file.name}` : file.name;
+
+        li.innerHTML = `
+            <span class="file-icon ${file.type}-icon"></span>
+            ${file.name}
+        `;
+
+        li.onclick = () => handleFileClick(file, fullPath);
+
+        if (file.type === 'folder' && file.children) {
+            const ul = document.createElement('ul');
+            ul.className = 'file-tree';
+            ul.style.display = 'none';
+            renderFileTree(file.children, ul, fullPath);
+            li.appendChild(ul);
+
+            li.ondblclick = () => {
+                const childUl = li.querySelector('ul');
+                childUl.style.display = childUl.style.display === 'none' ? 'block' : 'none';
+            };
+        }
+
+        container.appendChild(li);
+    });
+}
+
+async function handleFileClick(file, path) {
+    if (file.type === 'file') {
+        await openFile(path);
+    }
+}
+
+async function openFile(path) {
+    try {
+        const response = await fetch(`/api/files/${path}`);
+        const data = await response.json();
+
+        if (response.ok) {
+            // Create or switch to tab
+            createTab(path, data.content);
+
+            // Update editor content
+            const model = monaco.editor.createModel(data.content, getLanguageFromPath(path));
+            window.editor.setModel(model);
+
+            currentFile = path;
+
+            // Update status bar
+            updateFileType(path);
+        } else {
+            showError('Failed to load file: ' + data.detail);
+        }
+    } catch (error) {
+        showError('Error opening file: ' + error.message);
+    }
+}
+
+function createTab(filePath, content) {
+    const tabsBar = document.getElementById('tabs-bar');
+    const fileName = filePath.split('/').pop();
+
+    // Check if tab already exists
+    const existingTab = tabsBar.querySelector(`[data-path="${filePath}"]`);
+    if (existingTab) {
+        // Switch to existing tab
+        tabsBar.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+        existingTab.classList.add('active');
+        return;
+    }
+
+    // Create new tab
+    const tab = document.createElement('div');
+    tab.className = 'tab active';
+    tab.setAttribute('data-path', filePath);
+    tab.innerHTML = `
+        ${fileName}
+        <span class="close-btn" onclick="closeTab('${filePath}')">
+            <i class="fas fa-times"></i>
+        </span>
+    `;
+
+    tab.onclick = () => switchToTab(filePath);
+
+    // Remove active class from other tabs
+    tabsBar.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+
+    tabsBar.appendChild(tab);
+}
+
+function switchToTab(filePath) {
+    const tabsBar = document.getElementById('tabs-bar');
+    tabsBar.querySelectorAll('.tab').forEach(tab => {
+        if (tab.getAttribute('data-path') === filePath) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
+    });
+
+    // Load file content if different
+    if (currentFile !== filePath) {
+        openFile(filePath);
+    }
+}
+
+function closeTab(filePath) {
+    const tabsBar = document.getElementById('tabs-bar');
+    const tab = tabsBar.querySelector(`[data-path="${filePath}"]`);
+
+    if (tab) {
+        tab.remove();
+
+        // Switch to another tab if this was active
+        if (tab.classList.contains('active')) {
+            const remainingTabs = tabsBar.querySelectorAll('.tab');
+            if (remainingTabs.length > 0) {
+                switchToTab(remainingTabs[0].getAttribute('data-path'));
+            } else {
+                // No tabs left, show welcome content
+                window.editor.setValue('// Welcome to Sanaa Web IDE\n// Open a file to start coding...');
+                currentFile = null;
+            }
+        }
+    }
+}
+
+// Terminal functionality
+function initializeTerminal() {
+    const terminal = document.getElementById('terminal-output');
+    const input = document.getElementById('command-input');
+
+    // Focus input on terminal click
+    terminal.addEventListener('click', () => input.focus());
+}
+
+function handleCommandKeyPress(event) {
+    if (event.key === 'Enter') {
+        executeCommand();
+    } else if (event.key === 'ArrowUp') {
+        navigateCommandHistory(-1);
+    } else if (event.key === 'ArrowDown') {
+        navigateCommandHistory(1);
+    }
+}
+
+function executeCommand() {
+    const input = document.getElementById('command-input');
+    const command = input.value.trim();
+
+    if (!command) return;
+
+    // Add to history
+    commandHistory.push(command);
+    commandHistoryIndex = commandHistory.length;
+
+    // Display command
+    appendToTerminal(`sanaa> ${command}`);
+
+    // Execute command
+    executeCommandAsync(command);
+
+    // Clear input
+    input.value = '';
+}
+
+async function executeCommandAsync(command) {
+    try {
+        const response = await fetch('/api/command', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                command: command,
+                args: []
+            })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            appendToTerminal(result.result.output || 'Command executed successfully');
+        } else {
+            appendToTerminal(`Error: ${result.error}`);
+        }
+    } catch (error) {
+        appendToTerminal(`Error: ${error.message}`);
+    }
+
+    // Add new prompt
+    appendToTerminal('\nsanaa> ');
+}
+
+function appendToTerminal(text) {
+    const terminal = document.getElementById('terminal-output');
+    terminal.textContent += text + '\n';
+    terminal.scrollTop = terminal.scrollHeight;
+}
+
+function navigateCommandHistory(direction) {
+    if (commandHistory.length === 0) return;
+
+    commandHistoryIndex += direction;
+
+    if (commandHistoryIndex < 0) {
+        commandHistoryIndex = -1;
+        document.getElementById('command-input').value = '';
+    } else if (commandHistoryIndex >= commandHistory.length) {
+        commandHistoryIndex = commandHistory.length;
+        document.getElementById('command-input').value = '';
+    } else {
+        document.getElementById('command-input').value = commandHistory[commandHistoryIndex];
+    }
+}
+
+// Chat functionality
+function initializeChat() {
+    // Chat is already initialized in HTML
+}
+
+function handleChatKeyPress(event) {
+    if (event.key === 'Enter') {
+        sendChatMessage();
+    }
+}
+
+function sendChatMessage() {
+    const input = document.getElementById('chat-input');
+    const message = input.value.trim();
+
+    if (!message) return;
+
+    // Add user message
+    addChatMessage(message, 'user');
+
+    // Clear input
+    input.value = '';
+
+    // Simulate AI response (in real implementation, this would call the API)
+    setTimeout(() => {
+        const responses = [
+            "I understand you're working on that. Let me help you with the implementation.",
+            "That's a great question! Here's what I recommend:",
+            "I can see you're trying to accomplish this. Let me provide some guidance.",
+            "Great! I can help you with that. Here's my suggestion:"
+        ];
+
+        const response = responses[Math.floor(Math.random() * responses.length)];
+        addChatMessage(response, 'assistant');
+    }, 1000 + Math.random() * 2000);
+}
+
+function addChatMessage(message, type) {
+    const messages = document.getElementById('chat-messages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${type}`;
+
+    if (type === 'user') {
+        messageDiv.innerHTML = `<strong>You:</strong> ${message}`;
+    } else {
+        messageDiv.innerHTML = `<strong>Sanaa:</strong> ${message}`;
+    }
+
+    messages.appendChild(messageDiv);
+    messages.scrollTop = messages.scrollHeight;
+}
+
+// Editor helpers
+function updateCursorPosition(position) {
+    document.getElementById('cursor-position').textContent =
+        `Ln ${position.lineNumber}, Col ${position.column}`;
+}
+
+function handleContentChange(event) {
+    // Auto-save or other content change handling
+    if (currentFile) {
+        // Debounced save
+        clearTimeout(window.saveTimeout);
+        window.saveTimeout = setTimeout(() => saveCurrentFile(), 1000);
+    }
+}
+
+async function saveCurrentFile() {
+    if (!currentFile || !window.editor) return;
+
+    try {
+        const content = window.editor.getValue();
+
+        const response = await fetch(`/api/files/${currentFile}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ content: content })
+        });
+
+        if (response.ok) {
+            showNotification('File saved successfully', 'success');
+        } else {
+            showNotification('Failed to save file', 'error');
+        }
+    } catch (error) {
+        showNotification('Error saving file: ' + error.message, 'error');
+    }
+}
+
+function getLanguageFromPath(path) {
+    const ext = path.split('.').pop().toLowerCase();
+    const languageMap = {
+        'py': 'python',
+        'js': 'javascript',
+        'ts': 'typescript',
+        'html': 'html',
+        'css': 'css',
+        'json': 'json',
+        'md': 'markdown',
+        'yaml': 'yaml',
+        'yml': 'yaml',
+        'sql': 'sql',
+        'sh': 'shell',
+        'java': 'java',
+        'cpp': 'cpp',
+        'c': 'c',
+        'go': 'go',
+        'rs': 'rust',
+        'php': 'php'
+    };
+
+    return languageMap[ext] || 'plaintext';
+}
+
+function updateFileType(path) {
+    const ext = path.split('.').pop().toLowerCase();
+    const typeMap = {
+        'py': 'Python',
+        'js': 'JavaScript',
+        'ts': 'TypeScript',
+        'html': 'HTML',
+        'css': 'CSS',
+        'json': 'JSON',
+        'md': 'Markdown',
+        'txt': 'Plain Text'
+    };
+
+    document.getElementById('file-type').textContent = typeMap[ext] || 'Plain Text';
+}
+
+// UI helpers
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('hidden');
+}
+
+function showPanelContent(panelType) {
+    const panelContents = document.querySelectorAll('.panel-content-item');
+    panelContents.forEach(content => {
+        content.classList.remove('active');
+    });
+
+    const targetContent = document.getElementById(`${panelType}-panel`);
+    if (targetContent) {
+        targetContent.classList.add('active');
+    }
+}
+
+function showNotification(message, type = 'info') {
+    // Simple notification - in production, use a proper notification system
+    console.log(`[${type.toUpperCase()}] ${message}`);
+}
+
+function showError(message) {
+    showNotification(message, 'error');
+}
+
+// Keyboard shortcuts
+function handleKeyboardShortcut(event) {
+    // Ctrl+S for save
+    if (event.ctrlKey && event.key === 's') {
+        event.preventDefault();
+        saveCurrentFile();
+    }
+
+    // Ctrl+O for open file dialog (simplified)
+    if (event.ctrlKey && event.key === 'o') {
+        event.preventDefault();
+        // Would show file picker
+    }
+
+    // Ctrl+Shift+P for command palette
+    if (event.ctrlKey && event.shiftKey && event.key === 'P') {
+        event.preventDefault();
+        // Would show command palette
+    }
+}
+
+// Initialize panel tabs
+document.addEventListener('DOMContentLoaded', function() {
+    showPanelContent('terminal');
+});
+{% endblock %}

@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 echo -e "\033[33m[notice]\033[0m 'swarm' has been renamed to 'sanaa'. Forwarding..."
-exec /usr/local/bin/sanaa "$@"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec python3 "$SCRIPT_DIR/sanaa_orchestrator.py" "$@"

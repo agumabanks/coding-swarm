@@ -17,6 +17,7 @@ dependencies = [
 ]
 
 [project.scripts]
+sanaa = "coding_swarm_cli.interactive:app"
 swarmx = "coding_swarm_cli.interactive:app"
 swarm-orchestrator = "coding_swarm_orchestrator.orchestrator:main"
 swarm-agent = "coding_swarm_agents.__main__:main"

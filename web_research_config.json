@@ -1,0 +1,157 @@
+{
+  "web_research": {
+    "enabled": true,
+    "security_level": "high",
+    "allowed_domains": [
+      "docs.npmjs.com",
+      "reactjs.org",
+      "laravel.com",
+      "flutter.dev",
+      "developer.mozilla.org",
+      "stackoverflow.com",
+      "github.com",
+      "pypi.org",
+      "pub.dev",
+      "nodejs.org",
+      "webpack.js.org",
+      "vitejs.dev",
+      "tailwindcss.com",
+      "getbootstrap.com",
+      "vuejs.org",
+      "angular.io",
+      "docs.djangoproject.com",
+      "fastapi.tiangolo.com",
+      "www.typescriptlang.org"
+    ],
+    "blocked_patterns": [
+      "*.exe",
+      "*.msi",
+      "*.dmg",
+      "*.pkg",
+      "*.deb",
+      "*.rpm",
+      "*.tar.gz",
+      "*.zip",
+      "*.rar",
+      "*.7z"
+    ],
+    "rate_limiting": {
+      "requests_per_minute": 10,
+      "burst_limit": 5,
+      "cooldown_period": 60
+    },
+    "content_limits": {
+      "max_content_length": 50000,
+      "max_response_time": 10,
+      "allowed_content_types": [
+        "text/html",
+        "application/json",
+        "text/plain",
+        "application/xml",
+        "text/markdown"
+      ]
+    },
+    "caching": {
+      "enabled": true,
+      "cache_dir": "~/.sanaa/web_cache",
+      "ttl_seconds": 3600,
+      "max_cache_size_mb": 100,
+      "compression_enabled": true
+    },
+    "privacy": {
+      "user_agent": "Sanaa-Research-Agent/1.0 (Educational)",
+      "do_not_track": true,
+      "respect_robots_txt": true,
+      "anonymize_requests": true
+    },
+    "monitoring": {
+      "log_requests": true,
+      "log_responses": false,
+      "track_performance": true,
+      "alert_on_suspicious_activity": true
+    }
+  },
+  "research_capabilities": {
+    "documentation_lookup": {
+      "enabled": true,
+      "max_urls_per_query": 3,
+      "preferred_sources": [
+        "official_docs",
+        "github_repos",
+        "stackoverflow"
+      ]
+    },
+    "package_info": {
+      "enabled": true,
+      "supported_ecosystems": [
+        "npm",
+        "pypi",
+        "pub",
+        "composer",
+        "cargo"
+      ]
+    },
+    "api_reference": {
+      "enabled": true,
+      "supported_frameworks": [
+        "react",
+        "laravel",
+        "flutter",
+        "vue",
+        "angular",
+        "django",
+        "fastapi"
+      ]
+    },
+    "best_practices": {
+      "enabled": true,
+      "sources": [
+        "official_docs",
+        "github_best_practices",
+        "stackoverflow_accepted"
+      ]
+    },
+    "troubleshooting": {
+      "enabled": true,
+      "max_solutions": 5,
+      "sources": [
+        "stackoverflow",
+        "github_issues",
+        "documentation"
+      ]
+    }
+  },
+  "docker_integration": {
+    "container_name": "sanaa-web-research",
+    "network": "sanaa-network",
+    "security": {
+      "no_new_privileges": true,
+      "read_only_root": true,
+      "drop_capabilities": [
+        "ALL"
+      ],
+      "add_capabilities": [
+        "NET_RAW",
+        "NET_ADMIN"
+      ]
+    },
+    "resource_limits": {
+      "memory": "256m",
+      "cpu_shares": 512,
+      "max_connections": 10
+    }
+  },
+  "proxy_configuration": {
+    "enabled": true,
+    "port": 8085,
+    "rate_limiting": {
+      "research_zone": "10r/m",
+      "docs_zone": "30r/m"
+    },
+    "caching": {
+      "enabled": true,
+      "max_size": "100m",
+      "inactive_timeout": "1h"
+    }
+  }
+}

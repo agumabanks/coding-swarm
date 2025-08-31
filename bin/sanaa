@@ -1,0 +1,17 @@
+#!/usr/bin/env python3
+"""
+Sanaa - Premium AI Development Assistant
+Main entry point that launches Sanaa Projects interface
+"""
+import sys
+from pathlib import Path
+
+# Add the project root to Python path
+BASE_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(BASE_DIR))
+
+# Import and run the main CLI
+from packages.core.src.coding_swarm_core.projects import cli_main
+
+if __name__ == "__main__":
+    cli_main()

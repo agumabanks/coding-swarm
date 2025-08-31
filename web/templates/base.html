@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sanaa Web IDE{% endblock %}</title>
+
+    <!-- VS Code-inspired styling -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/editor/editor.main.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background-color: #1e1e1e;
+            color: #cccccc;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .vscode-layout {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .title-bar {
+            height: 30px;
+            background-color: #323233;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            -webkit-app-region: drag;
+        }
+
+        .title-bar .title {
+            color: #cccccc;
+            font-size: 13px;
+        }
+
+        .activity-bar {
+            width: 50px;
+            background-color: #333333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 10px;
+        }
+
+        .activity-bar .activity-item {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .activity-bar .activity-item:hover {
+            background-color: #2d2d30;
+        }
+
+        .activity-bar .activity-item.active {
+            background-color: #007acc;
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #252526;
+            border-right: 1px solid #3e3e42;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar.hidden {
+            display: none;
+        }
+
+        .sidebar-header {
+            padding: 10px;
+            border-bottom: 1px solid #3e3e42;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-header .title {
+            font-weight: 600;
+            color: #cccccc;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .editor-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #1e1e1e;
+        }
+
+        .tabs-bar {
+            height: 35px;
+            background-color: #2d2d30;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #3e3e42;
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 0 15px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            border-right: 1px solid #3e3e42;
+            background-color: transparent;
+            color: #cccccc;
+            font-size: 13px;
+            white-space: nowrap;
+            transition: background-color 0.2s;
+        }
+
+        .tab:hover {
+            background-color: #37373d;
+        }
+
+        .tab.active {
+            background-color: #1e1e1e;
+            border-bottom: 2px solid #007acc;
+        }
+
+        .tab .close-btn {
+            margin-left: 8px;
+            padding: 2px;
+            border-radius: 2px;
+            opacity: 0.7;
+        }
+
+        .tab .close-btn:hover {
+            opacity: 1;
+            background-color: #3e3e42;
+        }
+
+        .editor-container {
+            flex: 1;
+            position: relative;
+        }
+
+        .editor {
+            width: 100%;
+            height: 100%;
+        }
+
+        .status-bar {
+            height: 22px;
+            background-color: #007acc;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            font-size: 12px;
+            color: white;
+        }
+
+        .status-bar .status-item {
+            margin-right: 15px;
+        }
+
+        .panel {
+            height: 200px;
+            background-color: #252526;
+            border-top: 1px solid #3e3e42;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel.hidden {
+            display: none;
+        }
+
+        .panel-header {
+            padding: 5px 10px;
+            border-bottom: 1px solid #3e3e42;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .terminal {
+            background-color: #1e1e1e;
+            color: #cccccc;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            padding: 10px;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            height: 100%;
+        }
+
+        .command-input {
+            background-color: #252526;
+            border: 1px solid #3e3e42;
+            color: #cccccc;
+            padding: 5px 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            width: 100%;
+        }
+
+        .command-input:focus {
+            outline: none;
+            border-color: #007acc;
+        }
+
+        .file-tree {
+            list-style: none;
+            padding: 0;
+        }
+
+        .file-tree li {
+            padding: 2px 0;
+            cursor: pointer;
+        }
+
+        .file-tree li:hover {
+            background-color: #2d2d30;
+        }
+
+        .file-tree .file-icon {
+            margin-right: 5px;
+            width: 16px;
+            text-align: center;
+        }
+
+        .file-tree .folder-icon::before {
+            content: "📁";
+        }
+
+        .file-tree .file-icon::before {
+            content: "📄";
+        }
+
+        .chat-interface {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .chat-message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            max-width: 80%;
+        }
+
+        .chat-message.user {
+            background-color: #007acc;
+            color: white;
+            margin-left: auto;
+        }
+
+        .chat-message.assistant {
+            background-color: #37373d;
+            color: #cccccc;
+        }
+
+        .chat-input-area {
+            padding: 10px;
+            border-top: 1px solid #3e3e42;
+            display: flex;
+        }
+
+        .chat-input {
+            flex: 1;
+            background-color: #3c3c3c;
+            border: 1px solid #3e3e42;
+            color: #cccccc;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #007acc;
+        }
+
+        .chat-send-btn {
+            background-color: #007acc;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            margin-left: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .chat-send-btn:hover {
+            background-color: #005999;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #3e3e42;
+            border-radius: 50%;
+            border-top-color: #007acc;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+
+            .activity-bar {
+                width: 40px;
+            }
+
+            .activity-bar .activity-item {
+                width: 30px;
+                height: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="vscode-layout">
+        <div class="title-bar">
+            <div class="title">Sanaa Web IDE</div>
+        </div>
+
+        <div class="main-content">
+            <div class="activity-bar">
+                <div class="activity-item active" data-panel="explorer">
+                    <i class="fas fa-folder"></i>
+                </div>
+                <div class="activity-item" data-panel="search">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="activity-item" data-panel="git">
+                    <i class="fas fa-code-branch"></i>
+                </div>
+                <div class="activity-item" data-panel="debug">
+                    <i class="fas fa-bug"></i>
+                </div>
+                <div class="activity-item" data-panel="extensions">
+                    <i class="fas fa-puzzle-piece"></i>
+                </div>
+            </div>
+
+            <div class="sidebar" id="sidebar">
+                {% block sidebar %}{% endblock %}
+            </div>
+
+            <div class="editor-area">
+                <div class="tabs-bar" id="tabs-bar">
+                    <!-- Tabs will be dynamically added here -->
+                </div>
+
+                <div class="editor-container">
+                    {% block editor %}{% endblock %}
+                </div>
+
+                <div class="panel" id="panel">
+                    <div class="panel-header">
+                        <div class="panel-tabs">
+                            <div class="panel-tab active" data-panel="terminal">
+                                <i class="fas fa-terminal"></i> Terminal
+                            </div>
+                            <div class="panel-tab" data-panel="chat">
+                                <i class="fas fa-comments"></i> Chat
+                            </div>
+                            <div class="panel-tab" data-panel="output">
+                                <i class="fas fa-info-circle"></i> Output
+                            </div>
+                        </div>
+                        <div class="panel-actions">
+                            <button class="panel-toggle" id="panel-toggle">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="panel-content">
+                        {% block panel %}{% endblock %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <i class="fas fa-code"></i> Ready
+            </div>
+            <div class="status-item" id="cursor-position">
+                Ln 1, Col 1
+            </div>
+            <div class="status-item" id="file-encoding">
+                UTF-8
+            </div>
+            <div class="status-item" id="file-type">
+                Plain Text
+            </div>
+        </div>
+    </div>
+
+    <!-- Monaco Editor -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+
+    <!-- Main JavaScript -->
+    <script>
+        // Global variables
+        let monacoEditors = {};
+        let currentEditor = null;
+        let websocket = null;
+        let clientId = 'client_' + Date.now();
+
+        // Initialize Monaco Editor
+        require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
+        require(['vs/editor/editor.main'], function() {
+            {% block monaco_init %}{% endblock %}
+        });
+
+        // WebSocket connection
+        function connectWebSocket() {
+            websocket = new WebSocket(`ws://localhost:8080/ws/${clientId}`);
+
+            websocket.onopen = function(event) {
+                console.log('WebSocket connected');
+            };
+
+            websocket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                handleWebSocketMessage(data);
+            };
+
+            websocket.onclose = function(event) {
+                console.log('WebSocket disconnected');
+                // Reconnect after delay
+                setTimeout(connectWebSocket, 3000);
+            };
+
+            websocket.onerror = function(error) {
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        // Handle WebSocket messages
+        function handleWebSocketMessage(data) {
+            switch(data.type) {
+                case 'command_result':
+                    displayCommandResult(data);
+                    break;
+                case 'file_change':
+                    handleFileChange(data);
+                    break;
+                case 'file_update':
+                    handleFileUpdate(data);
+                    break;
+                default:
+                    console.log('Unknown message type:', data.type);
+            }
+        }
+
+        // Activity bar functionality
+        document.querySelectorAll('.activity-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const panel = this.dataset.panel;
+
+                // Update active state
+                document.querySelectorAll('.activity-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+
+                // Show corresponding sidebar
+                showSidebar(panel);
+            });
+        });
+
+        // Panel toggle
+        document.getElementById('panel-toggle').addEventListener('click', function() {
+            const panel = document.getElementById('panel');
+            const icon = this.querySelector('i');
+
+            if (panel.classList.contains('hidden')) {
+                panel.classList.remove('hidden');
+                icon.className = 'fas fa-chevron-down';
+            } else {
+                panel.classList.add('hidden');
+                icon.className = 'fas fa-chevron-up';
+            }
+        });
+
+        // Panel tabs
+        document.querySelectorAll('.panel-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const panelType = this.dataset.panel;
+
+                // Update active state
+                document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+
+                // Show corresponding panel content
+                showPanelContent(panelType);
+            });
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            connectWebSocket();
+            {% block init_script %}{% endblock %}
+        });
+
+        {% block scripts %}{% endblock %}
+    </script>
+</body>
+</html>

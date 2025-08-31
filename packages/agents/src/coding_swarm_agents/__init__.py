@@ -13,6 +13,14 @@ AGENT_REGISTRY: Dict[str, str] = {
     "coder": "coding_swarm_agents.coder:Coder",
     "tester": "coding_swarm_agents.tester:Tester",
     "debugger": "coding_swarm_agents.debugger:Debugger",
+    # Specialized framework agents
+    "react": "coding_swarm_agents.react_agent:ReactAgent",
+    "laravel": "coding_swarm_agents.laravel_agent:LaravelAgent",
+    "flutter": "coding_swarm_agents.flutter_agent:FlutterAgent",
+    # Advanced debugging
+    "advanced_debugger": "coding_swarm_agents.advanced_debugger:AdvancedDebuggerAgent",
+    # Planning and strategy
+    "planner": "coding_swarm_agents.planning_agent:PlanningAgent",
 }
 
 
